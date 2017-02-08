@@ -1,39 +1,33 @@
-﻿using UnityEngine;
-using System.Collections;
+using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using System.Text.RegularExpressions;
-using UnityEngine.EventSystems;
 using System.Text;
 using System;
 
-[RequireComponent(typeof(Text))]
 [ExecuteInEditMode]
-public class HyphenationJpn : UIBehaviour
+public class HyphenationJpn : Text
 {
 	// http://answers.unity3d.com/questions/424874/showing-a-textarea-field-for-a-string-variable-in.html
-	[TextArea(3,10), SerializeField]
-	private string text;
+	#pragma warning disable 114
+	public string text
+	{
+		get { return m_Text; }
+	}
+	#pragma warning restore 114
 
-	private RectTransform _RectTransform{
-		get{
-			if( _rectTransform == null )
+	private RectTransform _RectTransform
+	{
+		get
+		{
+			if (_rectTransform == null)
 				_rectTransform = GetComponent<RectTransform>();
 			return _rectTransform;
 		}
 	}
 	private RectTransform _rectTransform;
 
-	private Text _Text{
-		get{
-			if( _text == null )
-				_text = GetComponent<Text>();
-			return _text;
-		}
-	}
-	private Text _text;
-
-	protected override void OnRectTransformDimensionsChange ()
+	protected override void OnRectTransformDimensionsChange()
 	{
 		base.OnRectTransformDimensionsChange();
 		UpdateText(text);
@@ -45,67 +39,66 @@ public class HyphenationJpn : UIBehaviour
 		UpdateText(text);
 	}
 
-	void UpdateText(string str)
+	public void UpdateText(string str)
 	{
-		// update Text
-		_Text.text = GetFormatedText(_Text, str);
-	}
-	
-	public void GetText(string str)
-	{
-		text = str;
-		UpdateText(text);
+		m_Text = GetFormatedText(str);
 	}
 
-	float GetSpaceWidth(Text textComp)
+	float GetSpaceWidth()
 	{
-		float tmp0 = GetTextWidth(textComp, "m m");
-		float tmp1 = GetTextWidth(textComp, "mm");
+		float tmp0 = GetTextWidth("m m");
+		float tmp1 = GetTextWidth("mm");
 		return (tmp0 - tmp1);
 	}
 
-	float GetTextWidth(Text textComp, string message)
+	float GetTextWidth(string message)
 	{
-		if( _text.supportRichText ){
+		if (supportRichText)
+		{
 			message = Regex.Replace(message, RITCH_TEXT_REPLACE, string.Empty);
 		}
-		textComp.text = message;
-		return textComp.preferredWidth;
+		m_Text = message;
+		return preferredWidth;
 	}
 
-	string GetFormatedText(Text textComp, string msg)
+	string GetFormatedText(string msg)
 	{
-		if(string.IsNullOrEmpty(msg)){
+		if (string.IsNullOrEmpty(msg))
+		{
 			return string.Empty;
 		}
-		
+
 		float rectWidth = _RectTransform.rect.width;
-		float spaceCharacterWidth = GetSpaceWidth(textComp);
+		float spaceCharacterWidth = GetSpaceWidth();
 
 		// override
-		textComp.horizontalOverflow = HorizontalWrapMode.Overflow;
+		horizontalOverflow = HorizontalWrapMode.Overflow;
 
 		// work
 		StringBuilder lineBuilder = new StringBuilder();
 
 		float lineWidth = 0;
-		foreach( var originalLine in GetWordList(msg))
+		foreach (var originalLine in GetWordList(msg))
 		{
-			lineWidth += GetTextWidth(textComp, originalLine);
+			lineWidth += GetTextWidth(originalLine);
 
-			if( originalLine == Environment.NewLine ){
+			if (originalLine == Environment.NewLine)
+			{
 				lineWidth = 0;
-			}else{
-				if( originalLine == " " ){
+			}
+			else {
+				if (originalLine == " ")
+				{
 					lineWidth += spaceCharacterWidth;
 				}
 
-				if( lineWidth > rectWidth ){
-					lineBuilder.Append( Environment.NewLine );
-					lineWidth = GetTextWidth(textComp, originalLine);
+				if (lineWidth > rectWidth)
+				{
+					lineBuilder.Append(Environment.NewLine);
+					lineWidth = GetTextWidth(originalLine);
 				}
 			}
-			lineBuilder.Append( originalLine );
+			lineBuilder.Append(originalLine);
 		}
 
 		return lineBuilder.ToString();
@@ -117,18 +110,19 @@ public class HyphenationJpn : UIBehaviour
 		StringBuilder line = new StringBuilder();
 		char emptyChar = new char();
 
-		for(int characterCount = 0; characterCount < tmpText.Length; characterCount ++)
+		for (int characterCount = 0; characterCount < tmpText.Length; characterCount++)
 		{
 			char currentCharacter = tmpText[characterCount];
-			char nextCharacter = (characterCount < tmpText.Length-1) ? tmpText[characterCount+1] : emptyChar;
-			char preCharacter = (characterCount > 0) ? preCharacter = tmpText[characterCount-1] : emptyChar;
+			char nextCharacter = (characterCount < tmpText.Length - 1) ? tmpText[characterCount + 1] : emptyChar;
+			char preCharacter = (characterCount > 0) ? preCharacter = tmpText[characterCount - 1] : emptyChar;
 
-			line.Append( currentCharacter );
+			line.Append(currentCharacter);
 
-			if( ((IsLatin(currentCharacter) && IsLatin(preCharacter) ) && (IsLatin(currentCharacter) && !IsLatin(preCharacter))) ||
-			    (!IsLatin(currentCharacter) && CHECK_HYP_BACK(preCharacter)) ||
-			    (!IsLatin(nextCharacter) && !CHECK_HYP_FRONT(nextCharacter) && !CHECK_HYP_BACK(currentCharacter))||
-			    (characterCount == tmpText.Length - 1)){
+			if (((IsLatin(currentCharacter) && IsLatin(preCharacter)) && (IsLatin(currentCharacter) && !IsLatin(preCharacter))) ||
+				(!IsLatin(currentCharacter) && CHECK_HYP_BACK(preCharacter)) ||
+				(!IsLatin(nextCharacter) && !CHECK_HYP_FRONT(nextCharacter) && !CHECK_HYP_BACK(currentCharacter)) ||
+				(characterCount == tmpText.Length - 1))
+			{
 				words.Add(line.ToString());
 				line = new StringBuilder();
 				continue;
@@ -138,34 +132,28 @@ public class HyphenationJpn : UIBehaviour
 	}
 
 	// helper
-	public float textWidth{
-		set{
+	public float textWidth
+	{
+		set
+		{
 			_RectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, value);
 		}
-		get{
+		get
+		{
 			return _RectTransform.rect.width;
-		}
-	}
-	public int fontSize
-	{
-		set{
-			_Text.fontSize = value;
-		}
-		get{
-			return _Text.fontSize;
 		}
 	}
 
 	// static
-	private readonly static string RITCH_TEXT_REPLACE = 
+	private readonly static string RITCH_TEXT_REPLACE =
 		"(\\<color=.*\\>|</color>|" +
-		"\\<size=.n\\>|</size>|"+
-		"<b>|</b>|"+
+		"\\<size=.n\\>|</size>|" +
+		"<b>|</b>|" +
 		"<i>|</i>)";
 
 	// 禁則処理 http://ja.wikipedia.org/wiki/%E7%A6%81%E5%89%87%E5%87%A6%E7%90%86
 	// 行頭禁則文字
-	private readonly static char[] HYP_FRONT = 
+	private readonly static char[] HYP_FRONT =
 		(",)]｝、。）〕〉》」』】〙〗〟’”｠»" +// 終わり括弧類 簡易版
 		 "ァィゥェォッャュョヮヵヶっぁぃぅぇぉっゃゅょゎ" +//行頭禁則和字 
 		 "‐゠–〜ー" +//ハイフン類
@@ -173,14 +161,14 @@ public class HyphenationJpn : UIBehaviour
 		 "・:;" +//中点類
 		 "。.").ToCharArray();//句点類
 
-	private readonly static char[] HYP_BACK = 
+	private readonly static char[] HYP_BACK =
 		 "(（[｛〔〈《「『【〘〖〝‘“｟«".ToCharArray();//始め括弧類
 
-	private readonly static char[] HYP_LATIN = 
+	private readonly static char[] HYP_LATIN =
 		("abcdefghijklmnopqrstuvwxyz" +
-	     "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + 
-	     "0123456789" + 
-	     "<>=/().,").ToCharArray();
+		 "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+		 "0123456789" +
+		 "<>=/().,").ToCharArray();
 
 	private static bool CHECK_HYP_FRONT(char str)
 	{
