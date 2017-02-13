@@ -9,12 +9,10 @@ using System;
 public class HyphenationJpn : Text
 {
 	// http://answers.unity3d.com/questions/424874/showing-a-textarea-field-for-a-string-variable-in.html
-	#pragma warning disable 114
-	public string text
+	public new string text
 	{
 		get { return m_Text; }
 	}
-	#pragma warning restore 114
 
 	private RectTransform _RectTransform
 	{
